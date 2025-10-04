@@ -28,10 +28,15 @@ _CONTENT_OBJ = dict(
 )
 # fmt: on
 
+EMPTY_CONTENT = {}
 
 @pytest.fixture
 def content_provider():
     return ContentProvider(deepcopy(_CONTENT_OBJ))
+
+@pytest.fixture
+def empty_content_provider():
+    return ContentProvider(deepcopy(EMPTY_CONTENT))
 
 
 def test_get_dict(content_provider):
@@ -129,3 +134,10 @@ def test_get_size(content_provider):
 
 def test_str_and_byte(content_provider):
     assert set(content_provider.list(b"/")) == set(content_provider.list("/"))
+
+def test_put_and_get_empty_obj(content_provider):
+    assert content_provider.put("foo", "")
+    assert content_provider.get("foo") == ""
+
+def test_empty_content_provider(empty_content_provider):
+    assert empty_content_provider.put("foo", "bar")
