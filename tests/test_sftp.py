@@ -7,6 +7,7 @@ from paramiko.channel import Channel
 from paramiko.sftp_client import SFTPClient
 
 from pytest_sftpserver.sftp.server import SFTPServer
+from pytest_sftpserver.plugin import sftpserver
 
 # fmt: off
 CONTENT_OBJ = dict(
@@ -18,6 +19,8 @@ CONTENT_OBJ = dict(
     d="testfile3"
 )
 # fmt: on
+
+EMPTY_CONTENT_OBJ = {}
 
 
 @pytest.yield_fixture(scope="session")
@@ -35,6 +38,9 @@ def content(sftpserver):
     with sftpserver.serve_content(deepcopy(CONTENT_OBJ)):
         yield
 
+def empty_content(sftpserver):
+    with sftpserver.serve_content(deepcopy(EMPTY_CONTENT_OBJ)):
+        yield
 
 @pytest.mark.xfail(sys.version_info < (2, 7), reason="Intermittently broken on 2.6")
 def test_sftpserver_bound(sftpserver):
@@ -165,6 +171,15 @@ def test_sftpserver_chmod(content, sftpclient):
     sftpclient.chmod("/a/b", 1)
     with sftpclient.open("/a/b", "r") as f:
         f.chmod(1)
+
+def test_sftp_server_rename_empty_file(content, sftpclient, tmpdir):
+    tmpfile = tmpdir.join("test.txt")
+    thetext = u""
+    tmpfile.write(thetext)
+    sftpclient.put(str(tmpfile), "/a/test.txt")
+    sftpclient.rename("/a/test.txt", "/a/newtest.txt")
+    with sftpclient.open("/a/newtest.txt", "r") as result:
+        assert result.read() == thetext.encode()
 
 
 def test_sftpserver_stat_non_str(sftpserver, sftpclient):
